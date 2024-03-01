@@ -1,0 +1,72 @@
+#include <ESP32Servo.h>
+#include <WiFi.h>
+#include <UniversalTelegramBot.h>
+
+const char* ssid = "IoT";
+const char* password = "KdGIoT43!";
+const char* botToken = "6748715045:AAF2DDPc_UfIwrF6w1neywWbahjXT9aP9wg";
+
+WiFiClient client;
+UniversalTelegramBot bot(botToken, client);
+
+const int SERVO_PIN = A4;
+Servo servo;
+
+unsigned long previousMillis = 0;
+const long interval = 10000; // Interval van 10 seconden (10 * 1000 milliseconden)
+
+void setup() {
+  Serial.begin(9600);
+  servo.attach(SERVO_PIN);
+
+  // Connect to Wi-Fi
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    // Draai de servomotor elke 10 seconden met een hoek van 90 graden
+    servo.write(90);
+    delay(1000); // Wacht 1 seconde om de beweging van de servo te voltooien (optioneel)
+    servo.write(0);
+  }
+
+  // Voer berichtenloop uit om te communiceren met de Telegram-bot (als nodig)
+  if (WiFi.status() == WL_CONNECTED) {
+    int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+
+    while (numNewMessages) {
+      Serial.println("got response");
+
+      for (int i = 0; i < numNewMessages; i++) {
+        String chat_id = String(bot.messages[i].chat_id);
+        String text = bot.messages[i].text;
+
+        if (text == "/open") {
+          servo.write(90); // Open de servo (gaat naar 90 graden)
+          bot.sendMessage(chat_id, "Servo geopend");
+        } else if (text == "/close") {
+          servo.write(0); // Sluit de servo (gaat naar 0 graden)
+          bot.sendMessage(chat_id, "Servo gesloten");
+        }
+      }
+
+      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    }
+  }
+}
