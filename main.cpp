@@ -2,21 +2,20 @@
 //#define HX711_I2C_ADDR
 //#define HX711_I2C_ADDR 0x64
 #include <DFRobot_HX711_I2C.h>
-#define HX711_I2C_ADDR 0x64 // Replace 0x64 with the correct I2C address
+#define HX711_I2C_ADDR 0x66 // Replace 0x64 with the correct I2C address
 
 
-DFRobot_HX711_I2C MyScale;
-
-//DFRobot_HX711_I2C MyScale(&Wire,/*addr=*/0x64);
+//DFRobot_HX711_I2C MyScale;
+DFRobot_HX711_I2C MyScale(&Wire,/*addr=*/0x64);
 //DFRobot_HX711_I2C MyScale;
 
 float Weight = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(15200);
   while (!MyScale.begin()) {
     Serial.println("The initialization of the chip is failed, please confirm whether the chip connection is correct");
-    delay(1000);
+    delay(5000);
   }
   //// Set the calibration weight when the weight sensor module is automatically calibrated (g)
   MyScale.setCalWeight(50);
@@ -27,7 +26,7 @@ void setup() {
   Serial.print("the calibration value of the sensor is: ");
   Serial.println(MyScale.getCalibration());
   MyScale.setCalibration(MyScale.getCalibration());
-  delay(1000);
+  delay(5000);
 }
 
 void loop() {
@@ -40,5 +39,5 @@ void loop() {
     Serial.print(0, 1);
   }
   Serial.println(" g");
-  delay(1000); 
+  delay(2000); 
 }

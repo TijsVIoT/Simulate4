@@ -1,0 +1,53 @@
+//#include <ESP32Servo.h>
+#include <WiFi.h>
+//#include <Servo.h>
+//#include <UniversalTelegramBot.h>
+//#include <ArduinoJson.h>
+#include <Wire.h>
+
+const char* ssid = "IoT";
+const char* password = "KdGIoT43!";
+//const char* botToken = "6748715045:AAF2DDPc_UfIwrF6w1neywWbahjXT9aP9wg";
+// Chat-ID van de ontvanger (vervang dit door de werkelijke chat-ID)
+//const String ChatId = "5444660794";
+
+
+
+const int SERVO_PIN = A4;
+//Servo servo;
+
+unsigned long previousMillis = 0;
+const long interval = 10000; // Interval van 10 seconden (10 * 1000 milliseconden)
+
+void setup() {
+  Serial.begin(115200);
+  //servo.attach(SERVO_PIN);
+
+  // Connect to Wi-Fi
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    // Draai de servomotor elke 10 seconden met een hoek van 90 graden
+    //servo.write(90);
+    delay(1000); // Wacht 1 seconde om de beweging van de servo te voltooien (optioneel)
+    //servo.write(0);
+
+  }
+}
