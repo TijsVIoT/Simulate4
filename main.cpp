@@ -12,7 +12,7 @@ DFRobot_HX711_I2C MyScale(&Wire,/*addr=*/0x64);
 float Weight = 0;
 
 void setup() {
-  Serial.begin(15200);
+  Serial.begin(115200);
   while (!MyScale.begin()) {
     Serial.println("The initialization of the chip is failed, please confirm whether the chip connection is correct");
     delay(5000);
