@@ -1,123 +1,59 @@
 #include <ESP32Servo.h>
 #include <WiFi.h>
 #include <UniversalTelegramBot.h>
-
-const char* ssid = "IoT";
-const char* password = "KdGIoT43!";
-const char* botToken = "6748715045:AAF2DDPc_UfIwrF6w1neywWbahjXT9aP9wg";
-
-WiFiClient client;
-UniversalTelegramBot bot(botToken, client);
-
-const int SERVO_PIN = A4;
-Servo servo;
-
-unsigned long previousMillis = 0;
-const long interval = 10000; // Interval van 10 seconden (10 * 1000 milliseconden)
-
-void setup() {
-  Serial.begin(9600);
-  servo.attach(SERVO_PIN);
-
-  // Connect to Wi-Fi
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-void loop() {
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-
-    // Draai de servomotor elke 10 seconden met een hoek van 90 graden
-    servo.write(90);
-    delay(1000); // Wacht 1 seconde om de beweging van de servo te voltooien (optioneel)
-    servo.write(0);
-  }
-
-  // Voer berichtenloop uit om te communiceren met de Telegram-bot (als nodig)
-  if (WiFi.status() == WL_CONNECTED) {
-    int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-
-    while (numNewMessages) {
-      Serial.println("got response");
-
-      for (int i = 0; i < numNewMessages; i++) {
-        String chat_id = String(bot.messages[i].chat_id);
-        String text = bot.messages[i].text;
-
-        if (text == "/open") {
-          servo.write(90); // Open de servo (gaat naar 90 graden)
-          bot.sendMessage(chat_id, "Servo geopend");
-        } else if (text == "/close") {
-          servo.write(0); // Sluit de servo (gaat naar 0 graden)
-          bot.sendMessage(chat_id, "Servo gesloten");
-        }
-      }
-
-      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-#include <ESP32Servo.h>
-#include <WiFi.h>
-#include <UniversalTelegramBot.h>
 #include <ArduinoJson.h>
+#include <Wire.h>
 
-const char* ssid = "IoT";
-const char* password = "KdGIoT43!";
+const char* ssid = "Galaxy S20 FE A601";
+const char* password = "jnna0341";
 const char* botToken = "6748715045:AAF2DDPc_UfIwrF6w1neywWbahjXT9aP9wg";
 // Chat-ID van de ontvanger (vervang dit door de werkelijke chat-ID)
-const String recipientChatId = "5444660794";
+const String ChatId = "5444660794";
 
 WiFiClient client;
 UniversalTelegramBot bot(botToken, client);
 
-const int SERVO_PIN = A4;
+const int SERVO_PIN = 4; // Pin A4 is niet beschikbaar op ESP32, gebruik een andere pin zoals 4
 Servo servo;
 
 unsigned long previousMillis = 0;
 const long interval = 10000; // Interval van 10 seconden (10 * 1000 milliseconden)
 
-void setup() {
-  Serial.begin(9600);
-  servo.attach(SERVO_PIN);
-
-  // Connect to Wi-Fi
-  Serial.println();
+void connectToWiFi() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  int retryCount = 0;
+
+  while (WiFi.status() != WL_CONNECTED && retryCount < 20) { // Max 10 seconden proberen
     delay(500);
     Serial.print(".");
+    retryCount++;
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("");
+    Serial.println("Failed to connect to WiFi");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000); // Wacht even om de seriële monitor tijd te geven om op te starten
+  servo.attach(SERVO_PIN);
+  connectToWiFi();
 }
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    connectToWiFi();
+  }
+
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
@@ -129,19 +65,25 @@ void loop() {
     servo.write(0);
     
     // Stuur een melding via Telegram wanneer de servo is gedraaid
-    bot.sendMessage(recipientChatId, "Je servo motor is gedraaid");
+    if (WiFi.status() == WL_CONNECTED) {
+      bot.sendMessage(ChatId, "Je servo motor is gedraaid");
+    } else {
+      Serial.println("Not connected to WiFi, can't send message");
+    }
   }
 
   // Voer berichtenloop uit om te communiceren met de Telegram-bot (als nodig)
   if (WiFi.status() == WL_CONNECTED) {
     int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    Serial.print("Aantal nieuwe berichten: ");
+    Serial.println(numNewMessages);
 
-    while (numNewMessages) {
-      Serial.println("got response");
-
+    if (numNewMessages > 0) {
       for (int i = 0; i < numNewMessages; i++) {
         String chat_id = String(bot.messages[i].chat_id);
         String text = bot.messages[i].text;
+        Serial.print("Bericht ontvangen: ");
+        Serial.println(text);
 
         if (text == "/open") {
           servo.write(90); // Open de servo (gaat naar 90 graden)
@@ -151,10 +93,14 @@ void loop() {
           bot.sendMessage(chat_id, "Servo gesloten");
         }
       }
-
-      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    } else {
+      Serial.println("Geen nieuwe berichten ontvangen");
     }
+  } else {
+    Serial.println("WiFi not connected");
   }
+
+  delay(1000); // Voeg een korte vertraging toe om de loop te vertragen
 }
 
 
